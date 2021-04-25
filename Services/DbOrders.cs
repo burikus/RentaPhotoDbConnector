@@ -180,28 +180,31 @@ namespace RentaPhotoDbConnector.Services
 
                 var modifiedData = new List<string>();
 
-                if (!_order.ClientName.Equals(order.ClientName, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(_order.ClientName) && !_order.ClientName.Equals(order.ClientName, StringComparison.OrdinalIgnoreCase))
                 {
                     modifiedData.Add(order.ClientName);
                 }
-                if (_order.OrderStatus != order.OrderStatus)
+                if (_order.OrderStatus != null && _order.OrderStatus != order.OrderStatus)
                 {
                     modifiedData.Add(Enum.GetName(typeof(OrderStatus), (int)order.OrderStatus));
                 }
-                if (DateTime.Compare(_order.OrderDate.Value, order.OrderDate.Value) != 0)
+                if (_order.OrderDate != null && DateTime.Compare(_order.OrderDate.Value, order.OrderDate.Value) != 0)
                 {
                     modifiedData.Add(order.OrderDate.Value.ToString());
                 }
 
-                var goodsUpdated = _order.Goods.Join(order.Goods,
-                    o => o.ProductId,
-                    _o => _o.ProductId,
-                    (o, _o) => new { o, _o }
-                    ).Where(u => u.o.ProductId == u._o.ProductId && u.o.AmountOfProducts != u._o.AmountOfProducts)
-                    .Select(m => $"order = {m.o}, newAmount = {m.o.AmountOfProducts}, prevAmount = {m._o.AmountOfProducts}").ToList();
-                if (goodsUpdated.Count > 0)
+                if (order.Goods.Count > 0)
                 {
-                    goodsUpdated.ForEach(el => modifiedData.Add(el));
+                    var goodsUpdated = _order.Goods.Join(order.Goods,
+                        o => o.ProductId,
+                        _o => _o.ProductId,
+                        (o, _o) => new { o, _o }
+                        ).Where(u => u.o.ProductId == u._o.ProductId && u.o.AmountOfProducts != u._o.AmountOfProducts)
+                        .Select(m => $"order = {m.o}, newAmount = {m.o.AmountOfProducts}, prevAmount = {m._o.AmountOfProducts}").ToList();
+                    if (goodsUpdated.Count > 0)
+                    {
+                        goodsUpdated.ForEach(el => modifiedData.Add(el));
+                    }
                 }
 
                 _order = order;
@@ -241,32 +244,35 @@ namespace RentaPhotoDbConnector.Services
 
                 var modifiedData = new List<string>();
 
-                if (!_order.ClientName.Equals(order.ClientName, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(_order.ClientName) && !_order.ClientName.Equals(order.ClientName, StringComparison.OrdinalIgnoreCase))
                 {
                     _order.ClientName = order.ClientName;
                     modifiedData.Add(order.ClientName);
                 }
-                if (_order.OrderStatus != order.OrderStatus)
+                if (_order.OrderStatus != null && _order.OrderStatus != order.OrderStatus)
                 {
                     _order.OrderStatus = order.OrderStatus;
                     modifiedData.Add(Enum.GetName(typeof(OrderStatus), (int)order.OrderStatus));
                 }
-                if (DateTime.Compare(_order.OrderDate.Value, order.OrderDate.Value) != 0)
+                if (_order.OrderDate != null && DateTime.Compare(_order.OrderDate.Value, order.OrderDate.Value) != 0)
                 {
                     _order.OrderDate = order.OrderDate;
                     modifiedData.Add(order.OrderDate.Value.ToString());
                 }
 
-                var goodsUpdated = _order.Goods.Join(order.Goods,
+                if (order.Goods.Count > 0)
+                {
+                    var goodsUpdated = _order.Goods.Join(order.Goods,
                     o => o.ProductId,
                     _o => _o.ProductId,
                     (o, _o) => new { o, _o }
                     ).Where(u => u.o.ProductId == u._o.ProductId && u.o.AmountOfProducts != u._o.AmountOfProducts)
                     .Select(m => $"order = {m.o}, newAmount = {m.o.AmountOfProducts}, prevAmount = {m._o.AmountOfProducts}").ToList();
-                if (goodsUpdated.Count > 0)
-                {
-                    _order.Goods = order.Goods;
-                    goodsUpdated.ForEach(el => modifiedData.Add(el));
+                    if (goodsUpdated.Count > 0)
+                    {
+                        _order.Goods = order.Goods;
+                        goodsUpdated.ForEach(el => modifiedData.Add(el));
+                    }
                 }
 
                 dc.Entry(_order).State = EntityState.Modified;
